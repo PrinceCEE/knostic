@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import path from "node:path";
 
 import { UploadsHandler } from "./handlers";
 import { uploadsRouter } from "./routes";
