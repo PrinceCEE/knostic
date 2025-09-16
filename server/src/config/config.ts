@@ -3,13 +3,14 @@ import path from "node:path";
 import { configSchema } from "./schema";
 import { LogLevel } from "../types";
 
-class Config {
+export class Config {
   public port: number;
   public logLevel: LogLevel;
 
   constructor() {
     dotenv.config({
       path: path.resolve(process.cwd(), ".env"),
+      override: true,
     });
 
     const env = this.parse();
@@ -30,5 +31,3 @@ class Config {
     return result.data;
   }
 }
-
-export const config = new Config();

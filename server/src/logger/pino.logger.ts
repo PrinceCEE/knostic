@@ -1,13 +1,13 @@
 import pino from "pino";
 import { ILogger } from "./logger.interface";
-import { config } from "../config";
+import { Config } from "@/config";
 
 export class PinoLogger implements ILogger {
   private pinoLogger: pino.Logger;
 
-  constructor() {
+  constructor(private readonly config: Config) {
     this.pinoLogger = pino({
-      level: config.logLevel,
+      level: this.config.logLevel,
       serializers: {
         err: pino.stdSerializers.err,
       },
@@ -15,22 +15,22 @@ export class PinoLogger implements ILogger {
   }
 
   info(message: string, meta?: any): void {
-    this.pinoLogger.info(message, meta);
+    this.pinoLogger.info(meta, message);
   }
 
   warn(message: string, meta?: any): void {
-    this.pinoLogger.warn(message, meta);
+    this.pinoLogger.warn(meta, message);
   }
 
   error(message: string, meta?: any): void {
-    this.pinoLogger.error(message, meta);
+    this.pinoLogger.error(meta, message);
   }
 
   debug(message: string, meta?: any): void {
-    this.pinoLogger.debug(message, meta);
+    this.pinoLogger.debug(meta, message);
   }
 
   trace(message: string, meta?: any): void {
-    this.pinoLogger.trace(message, meta);
+    this.pinoLogger.trace(meta, message);
   }
 }

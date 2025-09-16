@@ -4,20 +4,23 @@ import path from "node:path";
 
 import { UploadsHandler } from "./handlers";
 import { uploadsRouter } from "./routes";
-import { config } from "./config";
-import { logger } from "./logger";
+import { Config } from "./config";
+import { Logger } from "./logger";
+import { CSVService } from "./services";
 
 function main() {
+  const config = new Config();
+  const csvService = new CSVService();
+  const logger = new Logger(config);
   const app = express();
 
-  const uploadHandler = new UploadsHandler();
+  const uploadHandler = new UploadsHandler(logger, csvService);
   const uploadRouter = uploadsRouter(uploadHandler);
 
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  app.use("/api/uploads", express.static(path.join(__dirname, "./uploads")));
   app.use("/api/csv", uploadRouter);
 
   app.listen(config.port, () => {
