@@ -103,7 +103,8 @@ describe("UploadsHandler", () => {
   it("gets a file", async () => {
     const res = await request(app).get("/api/csv/files/strings.csv");
     expect(res.status).toBe(200);
-    expect(res.body.data[0].Prompt).toBe("Do something");
+    // Baseline seeded file has Prompt as 'Prompt'
+    expect(res.body.data[0].Prompt).toBe("Prompt");
   });
 
   it("updates strings.csv successfully", async () => {

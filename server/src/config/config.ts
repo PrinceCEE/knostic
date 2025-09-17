@@ -14,7 +14,7 @@ export class Config {
     });
 
     const env = this.parse();
-    this.port = parseInt(env.PORT, 10);
+    this.port = parseInt(env.PORT || "3000", 10);
     this.logLevel = env.LOG_LEVEL;
   }
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { CSVService } from "./csv.service";
@@ -17,6 +17,24 @@ describe("CSVService", () => {
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
     fs.writeFileSync(classificationsPath, sampleClassifications);
     fs.writeFileSync(stringsPath, sampleStrings);
+  });
+
+  afterAll(() => {
+    try {
+      if (fs.existsSync(tmpDir)) {
+        for (const file of fs.readdirSync(tmpDir)) {
+          if (file.endsWith(".csv")) {
+            try {
+              fs.unlinkSync(path.join(tmpDir, file));
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      }
+    } catch {
+      /* ignore */
+    }
   });
 
   it("parse should read classifications file", async () => {
