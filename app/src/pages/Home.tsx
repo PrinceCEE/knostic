@@ -10,7 +10,11 @@ function Home() {
   >([]);
   const [fileList, setFileList] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState(0);
-  const [uploadLoading, setUploadLoading] = useState(false);
+  // Separate loading states for each upload button so they don't both show loading simultaneously
+  const [uploadLoading, setUploadLoading] = useState({
+    strings: false,
+    classifications: false,
+  });
   const [tabLoadingIndex, setTabLoadingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveErrorList, setSaveErrorList] = useState<string[]>([]);
@@ -70,27 +74,33 @@ function Home() {
   useEffect(() => {
     (async () => {
       const files = await fetchFiles();
-      if (files.length > 0) {
+      if (!files.length) return;
+      const sFile = files.find((f) => f.includes("strings"));
+      const cFile = files.find((f) => f.includes("classifications"));
+      if (sFile) {
         setActiveTab(0);
-        await fetchFileData(files[0]);
+        await fetchFileData(sFile);
+      } else if (cFile) {
+        setActiveTab(1);
+        await fetchFileData(cFile);
       }
     })();
   }, [fetchFiles, fetchFileData]);
 
   const handleStringsUpload = async (file: File | null) => {
     if (!file) return;
-    setUploadLoading(true);
+    setUploadLoading((p) => ({ ...p, strings: true }));
     setError(null);
     try {
       const data = await apiService.uploadFile({ stringsFile: file });
       if (data?.stringsData) {
         setStringsData(data.stringsData);
       }
-      const files = await fetchFiles();
-      const idx = files.findIndex((f) => f.includes("strings"));
-      if (idx >= 0) {
-        setActiveTab(idx);
-        await fetchFileData(files[idx]);
+      await fetchFiles();
+      setActiveTab(0);
+      const stringsFilename = fileList.find((f) => f.includes("strings"));
+      if (stringsFilename) {
+        await fetchFileData(stringsFilename);
       }
     } catch (err: unknown) {
       const e = err as ApiErrorLike;
@@ -104,24 +114,25 @@ function Home() {
         setError("Upload failed");
       }
     } finally {
-      setUploadLoading(false);
+      setUploadLoading((p) => ({ ...p, strings: false }));
     }
   };
 
   const handleClassificationsUpload = async (file: File | null) => {
     if (!file) return;
-    setUploadLoading(true);
+    setUploadLoading((p) => ({ ...p, classifications: true }));
     setError(null);
     try {
       const data = await apiService.uploadFile({ classificationsFile: file });
       if (data?.classificationsData)
         setClassificationsData(data.classificationsData);
-      const files = await fetchFiles();
-      const idx = files.findIndex((f) => f.includes("classifications"));
-      if (idx >= 0) {
-        setActiveTab(idx);
-        await fetchFileData(files[idx]);
-      }
+      await fetchFiles();
+
+      setActiveTab(1);
+      const classificationsFilename = fileList.find((f) =>
+        f.includes("classifications")
+      );
+      if (classificationsFilename) await fetchFileData(classificationsFilename);
     } catch (err: unknown) {
       const e = err as ApiErrorLike;
       if (e && e.response) {
@@ -134,12 +145,18 @@ function Home() {
         setError("Upload failed");
       }
     } finally {
-      setUploadLoading(false);
+      setUploadLoading((p) => ({ ...p, classifications: false }));
     }
   };
 
-  const activeFilename = fileList[activeTab];
-  const isStringsActive = activeFilename?.includes("strings");
+  // Derive filenames explicitly to avoid mismatched indexing order
+  const stringsFilename = fileList.find((f) => f.includes("strings"));
+  const classificationsFilename = fileList.find((f) =>
+    f.includes("classifications")
+  );
+  const activeFilename =
+    activeTab === 0 ? stringsFilename : classificationsFilename;
+  const isStringsActive = activeTab === 0; // Align tab index with dataset, independent of fileList order
   const currentTable = isStringsActive ? stringsData : classificationsData;
   const currentHeaders = isStringsActive
     ? stringsDataHeaders
@@ -320,13 +337,17 @@ function Home() {
         <h2 className="text-xl text-gray-700 font-semibold">Upload New Data</h2>
         <div className="flex gap-3 items-center flex-wrap">
           <UploadButton
-            label={uploadLoading ? "Uploading..." : "Upload Strings Data"}
+            label={
+              uploadLoading.strings ? "Uploading..." : "Upload Strings Data"
+            }
             onFileSelect={handleStringsUpload}
             resetAfterSelect
           />
           <UploadButton
             label={
-              uploadLoading ? "Uploading..." : "Upload Classifications Data"
+              uploadLoading.classifications
+                ? "Uploading..."
+                : "Upload Classifications Data"
             }
             onFileSelect={handleClassificationsUpload}
             resetAfterSelect
@@ -339,21 +360,18 @@ function Home() {
         <div className="flex flex-col gap-5 flex-1">
           <Tabs
             tabs={[
-              fileList.find((f) => f.includes("strings")) || "strings.csv",
-              fileList.find((f) => f.includes("classifications")) ||
-                "classifications.csv",
+              stringsFilename || "strings.csv",
+              classificationsFilename || "classifications.csv",
             ]}
             activeIndex={activeTab}
             loadingIndex={tabLoadingIndex ?? undefined}
             onChange={async (i) => {
               setActiveTab(i);
-              const targetFile = fileList[i];
+              const targetFile =
+                i === 0 ? stringsFilename : classificationsFilename;
               if (targetFile) {
-                if (targetFile.includes("strings")) {
-                  setStringsData([]);
-                } else if (targetFile.includes("classifications")) {
-                  setClassificationsData([]);
-                }
+                if (i === 0) setStringsData([]);
+                else setClassificationsData([]);
                 setTabLoadingIndex(i);
                 await fetchFileData(targetFile);
                 setTabLoadingIndex((prev) => (prev === i ? null : prev));
