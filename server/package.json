@@ -6,7 +6,7 @@
     "test": "vitest run",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc && tsc-alias"
+    "build": "npm install && tsc && tsc-alias"
   },
   "keywords": [],
   "author": "",
