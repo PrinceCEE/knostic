@@ -217,4 +217,26 @@ export class UploadsHandler {
       throw err;
     }
   };
+
+  downloadFile = async (req: Request, res: Response) => {
+    this.logger.info(`Download file - ${req.params.filename}`);
+    try {
+      const fileName = req.params.filename;
+      const files = await this.csvService.getFiles();
+      if (!files.includes(fileName)) {
+        throw new NotFoundException("File not found");
+      }
+      const filePath = path.join(__dirname, "../uploads", fileName);
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${fileName}"`
+      );
+
+      res.sendFile(filePath);
+    } catch (err) {
+      this.logger.info("Error occured while downloading a file", err);
+      throw err;
+    }
+  };
 }

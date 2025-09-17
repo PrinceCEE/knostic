@@ -16,6 +16,10 @@ export const uploadsRouter = (uploadsHandler: UploadsHandler) => {
   );
   router.get("/files", asyncifyHandler(uploadsHandler.getFileNames));
   router.get("/files/:filename", asyncifyHandler(uploadsHandler.getFile));
+  router.get(
+    "/files/:filename/download",
+    asyncifyHandler(uploadsHandler.downloadFile)
+  );
   router.put("/files/:filename", asyncifyHandler(uploadsHandler.updateFile));
 
   return router;

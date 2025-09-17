@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Table, Tabs, UploadButton } from "@/components";
+import { Download } from "lucide-react";
 import type { StringsData, ClassificationsData, ApiErrorLike } from "@/types";
 import { apiService } from "@/api";
 
@@ -10,7 +11,7 @@ function Home() {
   >([]);
   const [fileList, setFileList] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState(0);
-  // Separate loading states for each upload button so they don't both show loading simultaneously
+
   const [uploadLoading, setUploadLoading] = useState({
     strings: false,
     classifications: false,
@@ -19,6 +20,7 @@ function Home() {
   const [error, setError] = useState<string | null>(null);
   const [saveErrorList, setSaveErrorList] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   const [stringsSnapshot, setStringsSnapshot] = useState<StringsData[] | null>(
@@ -96,11 +98,11 @@ function Home() {
       if (data?.stringsData) {
         setStringsData(data.stringsData);
       }
-      await fetchFiles();
+      const freshFiles = await fetchFiles();
       setActiveTab(0);
-      const stringsFilename = fileList.find((f) => f.includes("strings"));
-      if (stringsFilename) {
-        await fetchFileData(stringsFilename);
+      const freshStrings = freshFiles.find((f) => f.includes("strings"));
+      if (freshStrings) {
+        await fetchFileData(freshStrings);
       }
     } catch (err: unknown) {
       const e = err as ApiErrorLike;
@@ -126,13 +128,12 @@ function Home() {
       const data = await apiService.uploadFile({ classificationsFile: file });
       if (data?.classificationsData)
         setClassificationsData(data.classificationsData);
-      await fetchFiles();
-
+      const freshFiles = await fetchFiles();
       setActiveTab(1);
-      const classificationsFilename = fileList.find((f) =>
+      const freshClassifications = freshFiles.find((f) =>
         f.includes("classifications")
       );
-      if (classificationsFilename) await fetchFileData(classificationsFilename);
+      if (freshClassifications) await fetchFileData(freshClassifications);
     } catch (err: unknown) {
       const e = err as ApiErrorLike;
       if (e && e.response) {
@@ -156,7 +157,7 @@ function Home() {
   );
   const activeFilename =
     activeTab === 0 ? stringsFilename : classificationsFilename;
-  const isStringsActive = activeTab === 0; // Align tab index with dataset, independent of fileList order
+  const isStringsActive = activeTab === 0;
   const currentTable = isStringsActive ? stringsData : classificationsData;
   const currentHeaders = isStringsActive
     ? stringsDataHeaders
@@ -300,6 +301,26 @@ function Home() {
     setSaveErrorList([]);
   };
 
+  const handleExport = async () => {
+    if (!activeFilename) return;
+    setExporting(true);
+    try {
+      const blob = await apiService.downloadFile(activeFilename);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = activeFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Export failed", e);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
     if (dirty) return;
     if (
@@ -399,6 +420,18 @@ function Home() {
               disabled={!dirty || saving}
             >
               Cancel
+            </button>
+            <div className="ml-auto" />
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded text-sm disabled:opacity-50 cursor-pointer"
+              disabled={saving || exporting || !activeFilename}
+              title="Export current CSV"
+            >
+              <Download
+                className={"w-4 h-4" + (exporting ? " animate-spin" : "")}
+              />
+              {exporting ? "Exporting..." : "Export CSV"}
             </button>
             {dirty && !saving && (
               <span className="text-xs text-amber-600 font-medium">

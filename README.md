@@ -11,7 +11,7 @@ A small full‑stack CSV management tool: upload, view, edit, validate and persi
 
 ## Live App
 
-Deployed Frontend: https://knostic-nmjsqu98g-chimezie-edehs-projects.vercel.app/
+Deployed Frontend: https://knostic.vercel.app
 
 The deployed app expects its backend API at the configured `VITE_API_URL` baked in at build time. If you redeploy the server under a different domain, rebuild the frontend with the new URL.
 

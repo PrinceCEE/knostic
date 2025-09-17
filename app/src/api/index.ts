@@ -14,6 +14,7 @@ class ApiService {
     this.getFiles = this.getFiles.bind(this);
     this.getFile = this.getFile.bind(this);
     this.updateFile = this.updateFile.bind(this);
+    this.downloadFile = this.downloadFile.bind(this);
   }
 
   async uploadFile(files: {
@@ -76,6 +77,14 @@ class ApiService {
       }
       throw err;
     }
+  }
+
+  async downloadFile(filename: string) {
+    const response = await this.axios.get(
+      `/csv/files/${encodeURIComponent(filename)}/download`,
+      { responseType: "blob" }
+    );
+    return response.data as Blob;
   }
 }
 
