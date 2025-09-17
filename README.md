@@ -9,6 +9,12 @@ A small full‑stack CSV management tool: upload, view, edit, validate and persi
 - Tests: Vitest + Supertest
 - Containerization: Docker & Docker Compose
 
+## Live App
+
+Deployed Frontend: https://knostic-nmjsqu98g-chimezie-edehs-projects.vercel.app/
+
+The deployed app expects its backend API at the configured `VITE_API_URL` baked in at build time. If you redeploy the server under a different domain, rebuild the frontend with the new URL.
+
 ## 1. Local Development (no Docker)
 
 ### Prerequisites
@@ -70,7 +76,7 @@ docker compose up -d
 Services:
 
 - `knostic-server`: http://localhost:3000
-- `knostic-app`: http://localhost:5173 (served via nginx)
+- `knostic-app`: http://localhost:5173
 
 ### Logs
 
