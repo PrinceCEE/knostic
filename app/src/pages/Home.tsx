@@ -268,10 +268,24 @@ function Home() {
       const payload = isStringsActive ? stringsData : classificationsData;
       const result = await apiService.updateFile(activeFilename, payload);
       if (!result?.success) {
-        const serverErrors = Array.isArray(result?.data)
-          ? (result.data as string[])
-          : [];
-        setSaveErrorList(serverErrors.length ? serverErrors : ["Save failed"]);
+        let serverErrors: string[] = [];
+        if (Array.isArray(result?.data)) {
+          const arr = result.data as unknown[];
+          serverErrors = arr.map((item) => {
+            if (item && typeof item === "object") {
+              const idx = (item as { index?: unknown }).index;
+              const errMsg = (item as { error?: unknown }).error;
+              const msg = (item as { message?: unknown }).message;
+              if (typeof errMsg === "string" && typeof idx === "number") {
+                return `Row ${idx + 1}: ${errMsg}`;
+              }
+              if (typeof msg === "string") return msg;
+            }
+            return String(item);
+          });
+        }
+        if (!serverErrors.length) serverErrors = ["Save failed"];
+        setSaveErrorList(serverErrors);
         return;
       }
 
@@ -347,14 +361,14 @@ function Home() {
   ]);
 
   return (
-    <div className="px-10 pt-6 min-h-screen flex flex-col gap-8">
-      <div className="flex flex-col gap-0.5">
+    <div className="px-10 py-6 h-full w-full flex flex-col gap-8">
+      <div className="flex flex-col gap-0.5 h-max">
         <h1 className="text-3xl font-bold">Manage your Data</h1>
         <h3 className="text-gray-500 font-semibold">
           Upload, view and edit your string and classification data.
         </h3>
       </div>
-      <div className="w-full bg-white rounded-md p-5 flex flex-col gap-4">
+      <div className="w-full bg-white rounded-md p-5 flex flex-col gap-4 h-max">
         <h2 className="text-xl text-gray-700 font-semibold">Upload New Data</h2>
         <div className="flex gap-3 items-center flex-wrap">
           <UploadButton
@@ -376,7 +390,7 @@ function Home() {
           {error && <span className="text-sm text-red-600">{error}</span>}
         </div>
       </div>
-      <div className="flex flex-col gap-3 flex-1">
+      <div className="flex flex-col gap-3 flex-1 overflow-y-scroll">
         <h2 className="text-xl text-gray-700 font-semibold">Uploaded Files</h2>
         <div className="flex flex-col gap-5 flex-1">
           <Tabs
@@ -439,14 +453,6 @@ function Home() {
               </span>
             )}
           </div>
-          <Table
-            headers={currentHeaders}
-            data={currentTable}
-            editable
-            maxHeight="calc(100vh - 380px)"
-            onCellChange={handleCellChange}
-            onDeleteRow={handleDeleteRow}
-          />
           {!!saveErrorList.length && (
             <div className="flex flex-col gap-1 bg-red-50 border border-red-200 rounded p-3 max-h-40 overflow-auto">
               {saveErrorList.map((e, i) => (
@@ -456,6 +462,14 @@ function Home() {
               ))}
             </div>
           )}
+          <Table
+            headers={currentHeaders}
+            data={currentTable}
+            editable
+            maxHeight="calc(100vh - 380px)"
+            onCellChange={handleCellChange}
+            onDeleteRow={handleDeleteRow}
+          />
         </div>
       </div>
     </div>

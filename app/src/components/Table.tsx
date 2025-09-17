@@ -47,7 +47,7 @@ export const Table: FC<Props> = ({
       style={{ maxWidth: "100%" }}
     >
       <div
-        className="overflow-y-auto rounded-md pb-4"
+        className="overflow-y-auto rounded-md"
         style={{ maxHeight: heightStyle }}
       >
         <table className="min-w-full">
